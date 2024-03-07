@@ -54,3 +54,21 @@ properties :
 - Same key = same partition
 
 ![Producer_with_key.png](img%2FProducer_with_key.png)
+
+## Kafka Consumer: Java API - Basic
+
+- Learn how to write a basic consumer to receive data from Kafka
+- View basic configuration parameters
+- Confirm we receive the data from the Kafka Producer written in Java
+
+![Consumer.png](img%2FConsumer.png)
+
+### property
+
+- key.deserializer: org.apache.kafka.common.serialization.StringDeserializer
+- value.deserializer: org.apache.kafka.common.serialization.StringDeserializer
+- group.id: my-first-application
+- auto.offset.reset: earliest
+  - earliest: automatically reset the offset to the earliest offset
+  - latest: automatically reset the offset to the latest offset
+  - none: throw exception to the consumer if no previous offset is found for the consumer's group
