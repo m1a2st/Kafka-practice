@@ -13,6 +13,15 @@
 | username | user |
 | pwd | password |
 
+### property
+
+- bootstrap.servers: <bootstrap_servers>
+- sasl.mechanism: SCRAM-SHA-256
+- security.protocol: SASL_SSL
+- sasl.jaas.config: org.apache.kafka.common.security.scram.ScramLoginModule required username=\"%s\" password=\"%s\"
+- key.serializer: org.apache.kafka.common.serialization.StringSerializer
+- value.serializer: org.apache.kafka.common.serialization.StringSerializer
+
 ### Create a topic:
 
 ```bash
@@ -26,3 +35,17 @@ kafka-console-consumer --command-config playground.config --bootstrap-server <bo
 ```
 
 ## Kafka Producer: Java API - Callbacks
+
+- Confirm the partition and offset the message was sent to using Callbacks
+- We'll look at the interesting behavior of `StickyPartitioner`
+
+![RoundRobin_StickyPartitioner.jpg](img%2FRoundRobin_StickyPartitioner.jpg)
+
+### Environment variables:
+
+properties :
+
+- batch.size 會影響到 partition 的選擇
+- partitioner.class: RoundRobinPartitioner StickyPartitioner 
+
+## Kafka Producer: Java API with Keys
