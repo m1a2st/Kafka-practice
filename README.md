@@ -49,3 +49,8 @@ properties :
 - partitioner.class: RoundRobinPartitioner StickyPartitioner 
 
 ## Kafka Producer: Java API with Keys
+
+- Send non-null keys to the Kafka topic
+- Same key = same partition
+
+![Producer_with_key.png](img%2FProducer_with_key.png)
