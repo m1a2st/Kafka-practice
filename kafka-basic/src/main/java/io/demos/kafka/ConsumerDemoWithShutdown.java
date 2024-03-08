@@ -62,8 +62,6 @@ public class ConsumerDemoWithShutdown {
 
     private static void polling(KafkaConsumer<String, String> consumer) {
         while (true) {
-            logger.info("Polling");
-
             ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(1000));
 
             records.forEach(record -> {

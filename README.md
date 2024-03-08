@@ -7,11 +7,11 @@
 
 ### Environment variables:
 
-| Variable | Value |
-| --- | --- |
+| Variable          | Value          |
+|-------------------|----------------|
 | bootstrap_servers | localhost:9092 |
-| username | user |
-| pwd | password |
+| username          | user           |
+| pwd               | password       |
 
 ### property
 
@@ -76,4 +76,10 @@ properties :
 ## Kafka Consumer - Graceful shutdown
 
 - Ensure we have code in place to respond to termination signals 
-- 
+
+## Kafka Consumer: Java API - Consumer Groups
+
+- Make your consumer in Java consume data as part of a consumer group
+- Observer partition rebalanced mechanisms
+
+![Consumer_Group.png](img%2FConsumer_Group.png)

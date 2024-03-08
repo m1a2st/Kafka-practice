@@ -16,10 +16,10 @@ public class ProducerDemoWithKeys {
 
     private static final Logger logger = LoggerFactory.getLogger(ProducerDemoWithKeys.class.getSimpleName());
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         // create Producer properties
         // connection properties
-        Properties props = new KafkaConfig().props;
+        Properties props = new KafkaConfig().settingProducerProp();
 
         props.setProperty("partitioner.class", RoundRobinPartitioner.class.getName());
         props.setProperty("batch.size", "400");
@@ -27,23 +27,27 @@ public class ProducerDemoWithKeys {
         // create the producer
         KafkaProducer<String, String> producer = new KafkaProducer<>(props);
 
-        for (int i = 0; i < 10; i++) {
+        for (int j = 0; j < 3; j++) {
+            for (int i = 0; i < 10; i++) {
 
-            String key = "id_" + i;
-            String value = "hello world" + i;
-            // create a producer record
-            ProducerRecord<String, String> record = new ProducerRecord<>(TOPIC, key, value);
+                String key = "id_" + i;
+                String value = "hello world" + i;
+                // create a producer record
+                ProducerRecord<String, String> record = new ProducerRecord<>(TOPIC, key, value);
 
-            // send data
-            producer.send(record, (recordMetadata, e) -> {
-                // executes every time a record is successfully sent or an exception is thrown
-                if (Objects.isNull(e)) {
-                    // the record was successfully sent
-                    logger.info("Key: " + key + "| Partition: " + recordMetadata.partition());
-                } else {
-                    logger.error("Error while producing", e);
-                }
-            });
+                // send data
+                producer.send(record, (recordMetadata, e) -> {
+                    // executes every time a record is successfully sent or an exception is thrown
+                    if (Objects.isNull(e)) {
+                        // the record was successfully sent
+                        logger.info("Key: " + key + "| Partition: " + recordMetadata.partition());
+                    } else {
+                        logger.error("Error while producing", e);
+                    }
+                });
+            }
+
+            Thread.sleep(1000);
         }
 
         // tell the producer to send all data and block until done (synchronous)
