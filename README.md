@@ -83,3 +83,56 @@ properties :
 - Observer partition rebalanced mechanisms
 
 ![Consumer_Group.png](img%2FConsumer_Group.png)
+
+## Consumer Groups and Partition Rebalanced
+
+- Moving partitions between consumers is called a rebalanced
+- Reassignment of partitions happened when a consumer leaves or joins a group
+- It also happens if an administrator adds new partitions into a topic
+
+![Partition_Rebalanced.png](img%2FPartition_Rebalanced.png)
+
+### Eager Rebalanced 
+
+- All consumes stop, give up their membership of partitions
+- They rejoin consumer group and get a new partition assignment
+- Problems:
+  - During a short period of time, the entire consumer group stops processing
+  - **Consumers don't necessarily get the same partitions they had before**
+
+![Eager_Rebalanced.png](img%2FEager_Rebalanced.png)
+
+### Cooperative Rebalanced (Incremental Rebalanced)
+
+- Reassigning a small subset of the partitions from one consumer to another
+- Other consumers that don't have reassigned partitions can still process uninterrupted
+- Can go through several iterations to find a **stable** assignment (hence "incremental")
+- Avoids **stop the world** events where all consumers stop processing data
+
+![Cooperative_Rebalance.png](img%2FCooperative_Rebalance.png)
+
+## Cooperative Rebalanced, how to use
+
+- Kafka Consumer: `partition.assignment.strategy`
+  - RangeAssignor: assign partitions on a per-topic basis (can lead to imbalance)
+  - RoundRobin: assign partitions on a per-topic in round-robin fashion, optimal balance
+  - StickyAssignor: balance like RoundRobin, and then minimises 
+    partition movements when consumer join/ leave the group in order to minimise movements
+  - **CooperativeStickyAssignor**: rebalanced strategy is identical to StinkyAssignor but supports
+    cooperative rebalances and therefore consumers can keep pn consuming from the topic
+  - The default assignor is [RangeAssignor, CooperativeStickyAssignor], which will use the RangeAssignor
+    by default, but allows upgrading to the CooperativeStickyAssignor with just a single rolling bounce 
+    that removes the RangeAssignor from the list
+- **Kafka Connect**: already implemented (enabled by default)
+- **Kafka Streams**: turned on by default using StreamPartitionAssignor
+
+## Static Group Membership
+
+- By default, when a consumer leaves a group, its practitioners are revoke and re-assigned
+- If it joins back, it will have a new "member ID" and new partitions assigned
+- If you specify `group.instance.id` it makes the consumer a **static member** 
+- Upon leaving, the consumer has up to `session.timeout.ms` to join back and get back its partitions
+  (else they will be re-assigned), without triggering a rebalanced
+- This is helpgul when consumers maintain local state and cache(to avoid re-building the cache)
+
+![Static_Group_Member.png](img%2FStatic_Group_Member.png)
