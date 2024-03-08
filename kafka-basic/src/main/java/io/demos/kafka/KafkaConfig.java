@@ -1,9 +1,15 @@
 package io.demos.kafka;
 
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 
 import java.util.Properties;
+
+import static org.apache.kafka.clients.consumer.ConsumerConfig.*;
+import static org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG;
+import static org.apache.kafka.clients.producer.ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG;
 
 public class KafkaConfig {
 
@@ -24,21 +30,21 @@ public class KafkaConfig {
                 "required username=\"%s\" password=\"%s\";", USERNAME, PWD));
     }
 
-    public Properties settingProducerProp(){
+    public Properties settingProducerProp() {
         // producer properties
-        props.put("key.serializer", StringSerializer.class.getName());
-        props.put("value.serializer", StringSerializer.class.getName());
+        props.put(KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        props.put(VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         return props;
     }
 
-    public Properties settingConsumerProp(){
+    public Properties settingConsumerProp() {
         // consumer properties
-        props.put("key.deserializer", StringDeserializer.class.getName());
-        props.put("value.deserializer", StringDeserializer.class.getName());
+        props.put(KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        props.put(VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
 
-        props.setProperty("group.id", GROUP_ID);
+        props.setProperty(GROUP_ID_CONFIG, GROUP_ID);
         // earliest, latest, none
-        props.setProperty("auto.offset.reset", "earliest");
+        props.setProperty(AUTO_OFFSET_RESET_CONFIG, "earliest");
         return props;
     }
 }

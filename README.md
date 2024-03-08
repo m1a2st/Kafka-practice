@@ -133,6 +133,20 @@ properties :
 - If you specify `group.instance.id` it makes the consumer a **static member** 
 - Upon leaving, the consumer has up to `session.timeout.ms` to join back and get back its partitions
   (else they will be re-assigned), without triggering a rebalanced
-- This is helpgul when consumers maintain local state and cache(to avoid re-building the cache)
+- This is helpgul when consumers maintain local state and cache (to avoid re-building the cache)
 
 ![Static_Group_Member.png](img%2FStatic_Group_Member.png)
+
+## Kafka Consumer: Auto Offset Commit Behavior
+
+- In the Java Consumer API, offsets are regular committed
+- **Enable at-least once reading scenario by default (under condition)**
+- Offsets are committed when you call `.poll()` and `auto.commit.interval.ms` has elapsed
+- Example: `auto.commit.interval.ms=5000` and `enable.auto.commit=true` will commit every 5 seconds
+- *Make sure message are all successfully processed before you call poll() again*
+  - If you don't, you will not be in at-least-once reading scenario
+  - If that (rare) case, you should disable `enable.auto.commit` and most likely most processing to a 
+    separate thread, and then from time-to-time call `commitSync()` or `commitAsync()` with the correct
+    offsets manually (advanced)
+
+![Auto_Offset.png](img%2FAuto_Offset.png)
