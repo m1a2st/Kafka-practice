@@ -12,7 +12,6 @@ public class KafkaConfig {
     private static final String USERNAME = System.getenv("username");
     private static final String PWD = System.getenv("pwd");
 
-
     // consumer
     private static final String GROUP_ID = "my-java-application";
     public static final String TOPIC = "demo_java";
