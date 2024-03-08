@@ -12,13 +12,14 @@ import java.util.Properties;
 
 import static io.demos.kafka.KafkaConfig.TOPIC;
 
-public class ConsumerDemo {
+public class ConsumerDemoWithShutdown {
 
-    private static final Logger logger = LoggerFactory.getLogger(ConsumerDemo.class.getSimpleName());
+    private static final Logger logger = LoggerFactory.getLogger(ConsumerDemoWithShutdown.class.getSimpleName());
 
     public static void main(String[] args) {
         // create consumer properties
         // connection properties
+
         Properties props = new KafkaConfig().settingConsumerProp();
 
         KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);

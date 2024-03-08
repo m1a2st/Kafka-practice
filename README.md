@@ -72,3 +72,8 @@ properties :
   - earliest: automatically reset the offset to the earliest offset
   - latest: automatically reset the offset to the latest offset
   - none: throw exception to the consumer if no previous offset is found for the consumer's group
+
+## Kafka Consumer - Graceful shutdown
+
+- Ensure we have code in place to respond to termination signals 
+- 

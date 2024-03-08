@@ -10,27 +10,16 @@ import org.slf4j.LoggerFactory;
 import java.util.Objects;
 import java.util.Properties;
 
+import static io.demos.kafka.KafkaConfig.TOPIC;
+
 public class ProducerDemoWithKeys {
 
     private static final Logger logger = LoggerFactory.getLogger(ProducerDemoWithKeys.class.getSimpleName());
 
     public static void main(String[] args) {
         // create Producer properties
-        String bootstrapServers = System.getenv("bootstrap_servers");
-        String username = System.getenv("username");
-        String pwd = System.getenv("pwd");
-        Properties props = new Properties();
-
         // connection properties
-        props.put("bootstrap.servers", bootstrapServers);
-        props.put("sasl.mechanism", "SCRAM-SHA-256");
-        props.put("security.protocol", "SASL_SSL");
-        props.put("sasl.jaas.config", String.format("org.apache.kafka.common.security.scram.ScramLoginModule " +
-                "required username=\"%s\" password=\"%s\";", username, pwd));
-
-        // set producer properties
-        props.put("key.serializer", StringSerializer.class.getName());
-        props.put("value.serializer", StringSerializer.class.getName());
+        Properties props = new KafkaConfig().props;
 
         props.setProperty("partitioner.class", RoundRobinPartitioner.class.getName());
         props.setProperty("batch.size", "400");
@@ -40,11 +29,10 @@ public class ProducerDemoWithKeys {
 
         for (int i = 0; i < 10; i++) {
 
-            String topic = "demo_java";
             String key = "id_" + i;
             String value = "hello world" + i;
             // create a producer record
-            ProducerRecord<String, String> record = new ProducerRecord<>(topic, key, value);
+            ProducerRecord<String, String> record = new ProducerRecord<>(TOPIC, key, value);
 
             // send data
             producer.send(record, (recordMetadata, e) -> {
