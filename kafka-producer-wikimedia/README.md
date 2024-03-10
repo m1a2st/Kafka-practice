@@ -92,3 +92,46 @@
   - Default: 5
   - Set it to 1 if you need to ensure ordering (may impact throughput)
 - In Kafka >= 1.0.0, there's a better solution with idempotent producers!
+
+### Idempotent Producer
+
+- The Producer can introduce duplicates messages in Kafka due to network errors
+
+![Idempotent_Producer.png](..%2Fimg%2FIdempotent_Producer.png)
+- In Kafka >= 0.11, you can define a "idempotent producer" which won't introduce duplicates on network error
+
+![Idempotent_Producer_Old_Version.png](..%2Fimg%2FIdempotent_Producer_Old_Version.png)
+
+- Idempotent producer are great to guarantee a stable and safe pipeline!
+- **They are the default since Kafka 3.0, recommend to use them**
+- They come with:
+  - `reties=Integer.MAX_VALUE`(2^31-1=2147483647)
+  - `max.in.flight.requests=1` (Kafka == 0.11) or
+  - `max.in.flight.requests=5` (Kafka >= 1.0 - high performance & keep ordering - KAFKA-5494)
+  - `acks=all`
+- These settings are applied automatically after you producer has started if not manually set
+- Just set: `producerProps.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "true")`
+
+# Kafka Producer defaults
+
+- Since Kafka 3.0, the producer is "safe" by default:
+  - `acks=all` (-1) 
+  - `enable.idempotence=true`
+- With Kafka 2.8 and lower, the producer by default comes with:
+  - `acks=1` 
+  - `enable.idempotence=false`
+
+# Safe Kafka Producer - Summary
+- Since Kafka 3.0, the producer is "safe" by default, otherwise, upgrade your clients or set the following settings
+- `acks=all`
+  - Ensure data is properly replicated before an ack is received
+- `min.insync.replicas=2` (broker/ topic level)
+  - Ensure two brokers in ISR at least have the data after an ack
+- `enable.idempotence=true`
+  - Duplicates are not introduced due to network retries
+- `retries=MAX_INT` (producer level)
+  - Retry until the `delivery.timeout.ms` is reached
+- `delivery.timeout.ms=120000` 
+  - Fail after retrying for 2 minutes
+- `max.in.flight.requests.per.connection=5`
+  - Ensure maximum performance while keeping message ordering
