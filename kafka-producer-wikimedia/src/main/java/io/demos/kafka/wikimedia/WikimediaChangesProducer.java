@@ -17,7 +17,9 @@ public class WikimediaChangesProducer {
     public static void main(String[] args) throws InterruptedException {
 
         // create producer properties
-        Properties props = new KafkaConfig().settingProducerProp();
+        Properties props = new KafkaConfig().settingProducerProp()
+                .addSafetyProducerProp()
+                .getProps();
 
         // create the Producer
         KafkaProducer<String, String> producer = new KafkaProducer<>(props);

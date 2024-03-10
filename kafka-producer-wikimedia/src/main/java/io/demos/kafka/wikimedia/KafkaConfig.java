@@ -6,6 +6,7 @@ import org.apache.kafka.common.serialization.StringSerializer;
 
 import java.util.Properties;
 
+import static java.lang.Integer.MAX_VALUE;
 import static org.apache.kafka.clients.consumer.ConsumerConfig.*;
 import static org.apache.kafka.clients.producer.ProducerConfig.*;
 import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
@@ -23,11 +24,19 @@ public class KafkaConfig {
         props.put(BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
     }
 
-    public Properties settingProducerProp() {
+    public KafkaConfig settingProducerProp() {
         // producer properties
         props.put(KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         props.put(VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        return props;
+        return this;
+    }
+
+    public KafkaConfig addSafetyProducerProp() {
+        props.put(ACKS_CONFIG, "all"); // same as setting -1
+        props.put(RETRIES_CONFIG, MAX_VALUE);
+        props.put(MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 5);
+        props.put(ENABLE_IDEMPOTENCE_CONFIG, true);
+        return this;
     }
 
     public Properties settingConsumerProp() {
@@ -38,6 +47,10 @@ public class KafkaConfig {
         props.setProperty(GROUP_ID_CONFIG, GROUP_ID);
         // earliest, latest, none
         props.setProperty(AUTO_OFFSET_RESET_CONFIG, "earliest");
+        return props;
+    }
+
+    public Properties getProps() {
         return props;
     }
 }
