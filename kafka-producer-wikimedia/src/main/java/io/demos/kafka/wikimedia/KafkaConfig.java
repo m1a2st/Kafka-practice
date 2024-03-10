@@ -1,31 +1,26 @@
-package io.demos.kafka;
+package io.demos.kafka.wikimedia;
 
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 
 import java.util.Properties;
 
 import static org.apache.kafka.clients.consumer.ConsumerConfig.*;
-import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
 import static org.apache.kafka.clients.producer.ProducerConfig.*;
+import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
 
 public class KafkaConfig {
 
     public final Properties props = new Properties();
-    private static final String BOOTSTRAP_SERVERS = System.getenv("bootstrap_servers");
-    private static final String USERNAME = System.getenv("username");
-    private static final String PWD = System.getenv("pwd");
+    private static final String BOOTSTRAP_SERVERS = "127.0.0.1:9092";
 
     // consumer
     private static final String GROUP_ID = "my-java-application";
-    public static final String TOPIC = "demo_java";
+    public static final String TOPIC = "wikimedia.recentchange";
 
     public KafkaConfig() {
         props.put(BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
-        props.put("sasl.mechanism", "SCRAM-SHA-256");
-        props.put("security.protocol", "SASL_SSL");
-        props.put("sasl.jaas.config", String.format("org.apache.kafka.common.security.scram.ScramLoginModule " +
-                "required username=\"%s\" password=\"%s\";", USERNAME, PWD));
     }
 
     public Properties settingProducerProp() {
