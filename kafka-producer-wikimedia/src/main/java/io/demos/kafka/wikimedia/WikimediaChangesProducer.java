@@ -19,6 +19,7 @@ public class WikimediaChangesProducer {
         // create producer properties
         Properties props = new KafkaConfig().settingProducerProp()
                 .addSafetyProducerProp()
+                .addHighThroughputProp()
                 .getProps();
 
         // create the Producer
