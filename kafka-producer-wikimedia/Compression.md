@@ -75,3 +75,41 @@ props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, "snappy");
 props.put(ProducerConfig.LINGER_MS_CONFIG, 20);
 props.put(ProducerConfig.BATCH_SIZE_CONFIG, 32*1024);
 ```
+
+# Producer Default Partitioner when `key != null`
+
+![Producer_Default_Partitioner.png](..%2Fimg%2FProducer_Default_Partitioner.png)
+
+- **Key Hashing** is the process of determining the mapping of a key to a partition
+- In the default Kafka partitioner, the keys are hashed using the murmur2 algorithm
+```text
+targetPartition = Math.abs(Utils.murmur2(keyBytes)) % (numPartitions - 1)
+```
+- This means that same key will go to the same partition (we already know this), and adding partitions to
+  a topic will completely alter the formula
+- It is most likely preferred to not override the behavior of the partitioner, but it is possible to do so 
+  using `partitioner.class`
+- When `key = null`, the producer has a **default partitioner** that varies:
+  - Round Robin: for Kafka 2.3 and below
+  - Sticky Partition: for Kafka 2.4 and above
+- Sticky Partitioner improves the performance of the producer especially when high throughput the key is null
+
+## Producer Default Partitioner Kafka <= v2.3 Round Robin Partitioner
+
+- With Kafka <= v2.3, when there's no partition and no key specified, the default partitioner sends data in
+  **round-robin** fashion
+- This results in **more matches** (one batch per partition) and **smaller batches** (imagine with 100 partitions)
+- Smaller batches lead to more requests as well as higher latency
+
+![Round_Robin.png](..%2Fimg%2FRound_Robin.png)
+
+## Producer Default Partitioner Kafka >= v2.4 Sticky Partitioner
+
+- It would be better to have all the records sent to a single partition and not multiple partitions to improve batching
+- The producer **sticky partitioner**:
+  - We "stick" to a partition until the batch is full or `linger.ms` has elapsed 
+  - After sending the batch, the partition that is sticky changes
+- Larger batches and reduced latency (because larger requests, and `batch.size` more likely to be reached)
+- Over time, records are still spread evenly across partitions
+
+![Sticky_Partition.png](..%2Fimg%2FSticky_Partition.png)
