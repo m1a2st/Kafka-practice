@@ -15,7 +15,7 @@ public class KafkaConfig {
     private final Properties props = new Properties();
     private static final String BOOTSTRAP_SERVERS = "127.0.0.1:9092";
 
-    private static final String GROUP_ID = "my-java-application";
+    private static final String GROUP_ID = "consumer-opensearch-demo";
     public static final String TOPIC = "wikimedia.recentchange";
 
     public KafkaConfig() {
@@ -29,7 +29,7 @@ public class KafkaConfig {
 
         props.setProperty(GROUP_ID_CONFIG, GROUP_ID);
         // earliest, latest, none
-        props.setProperty(AUTO_OFFSET_RESET_CONFIG, "earliest");
+        props.setProperty(AUTO_OFFSET_RESET_CONFIG, "latest");
         return props;
     }
 

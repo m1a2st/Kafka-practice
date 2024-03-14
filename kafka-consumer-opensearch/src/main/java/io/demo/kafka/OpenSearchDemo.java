@@ -6,7 +6,11 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.DefaultConnectionKeepAliveStrategy;
-import org.opensearch.client.RequestOptions;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.opensearch.action.index.IndexRequest;
+import org.opensearch.action.index.IndexResponse;
 import org.opensearch.client.RestClient;
 import org.opensearch.client.RestHighLevelClient;
 import org.opensearch.client.indices.CreateIndexRequest;
@@ -16,32 +20,54 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
+import java.time.Duration;
+import java.util.Properties;
 
+import static io.demo.kafka.KafkaConfig.TOPIC;
+import static java.util.Collections.singleton;
 import static org.opensearch.client.RequestOptions.DEFAULT;
+import static org.opensearch.common.xcontent.XContentType.JSON;
 
 public class OpenSearchDemo {
 
     private static final Logger logger = LoggerFactory.getLogger(OpenSearchDemo.class.getSimpleName());
+    private static final String INDEX_NAME = "wikimedia";
 
     public static void main(String[] args) throws IOException {
         // first create on OpenSearch Client
         RestHighLevelClient openSearchClient = createOpenSearchClient();
+        // create our Kafka Client
+        Properties props = new KafkaConfig().settingConsumerProp();
+        KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
 
         // we need to create the index if it does not exist already
-        try (openSearchClient) {
-            if (!openSearchClient.indices().exists(new GetIndexRequest("wikimedia"), DEFAULT)) {
-                CreateIndexRequest request = new CreateIndexRequest("wikimedia");
+        try (openSearchClient; consumer) {
+            if (!openSearchClient.indices().exists(new GetIndexRequest(INDEX_NAME), DEFAULT)) {
+                CreateIndexRequest request = new CreateIndexRequest(INDEX_NAME);
                 openSearchClient.indices().create(request, DEFAULT);
             } else {
                 logger.info("Index already exists");
             }
+            consumer.subscribe(singleton(TOPIC));
+
+            while (true) {
+                // poll for new messages
+                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(1000));
+                int recordCount = records.count();
+                logger.info("Received " + recordCount + " records");
+                // send the records to OpenSearch
+                for (ConsumerRecord<String, String> record : records) {
+                    try {
+                        IndexRequest indexRequest = new IndexRequest(INDEX_NAME)
+                                .source(record.value(), JSON);
+                        IndexResponse response = openSearchClient.index(indexRequest, DEFAULT);
+                        logger.info(response.getId());
+                    } catch (IOException e) {
+
+                    }
+                }
+            }
         }
-
-        // create our Kafka Client
-
-        // main code logic
-
-        // close things
     }
 
     public static RestHighLevelClient createOpenSearchClient() {
