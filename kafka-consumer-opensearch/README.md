@@ -20,3 +20,60 @@
 ## bottom line:
 ** for most applications you should use "at least once processing" (we'll see in practice how to do it) and ensure your 
 transformations/ processing are idempotent. **
+
+# Consumer Offset Commit Strategies
+
+- There are two most common patterns for committing offsets in a consumer application.
+- 2 strategies:
+  - (easy) `enable.auto.commit=true` & synchronous processing of batches
+  - (medium) `enable.auto.commit=false` & manual commit of offsets
+
+## Kafka Consumer - Auto Offset Commit Behavior
+
+- In the java Consumer API, offsets are regularly committed
+- Enable at-least once reading scenario by default (under conditions)
+- Offsets are committed when you call `.poll()` and `auto.commit.interval.ms` has elapsed
+- Example: `auto.commit.interval.ms=5000` and `enable.auto.commit=true` => will commit
+
+- **Make sure messages are all successfully processed before you call `.poll()` again**
+  - If you don't, you will not be in at-least-once reading scenario 
+  - In that (rare) case, you must disable `enable.auto.commit` and most likely most processing to a separate thread, and 
+    then from time-to time call `.commitSync()` or `.commitAsync()` with the correct offsets manually (advanced)
+  - 
+![Auto_Offset.png](..%2Fimg%2FAuto_Offset.png)
+
+### Consumer Offset Commits Strategies
+
+- `enable.auto.commit=true` & synchronous processing of batches
+```java
+while (true) {
+    ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
+    doSomethingSynchronous(batch);
+}
+```
+- With auto-commit, offsets will be committed automatically for you at regular interval (auto.commit.interval.ms 
+  **by default**) every-time you call `.poll()`
+- If you don't use synchronous processing, you will be in "at-most-once" behavior because offsets will be committed 
+  before your data is processing
+
+- `enable.auto.commit=false` & synchronous processing of batches
+```java
+while (true) {
+    batch += consumer.poll(Duration.ofMillis(100));
+    if isReady(batch) {
+        doSomethingSynchronous(batch);
+        consumer.commitSync();
+    }
+}
+```
+- You control when you commit offsets and what's the condition for committing them
+- Example: accumulating records into a buffer and then flushing the buffer to a database + committing offsets 
+  asynchronously them
+
+- `enable.auto.commit=false` & storing offsets externally
+- **This is advanced**
+  - You need to assign partitions to your consumer and at launch manually using `.seek()` API 
+  - You need to model and store your offsets in a database table for example
+  - You need to handle the cases where rebalances happen (`ConsumerRebalanceListener` interface)
+- Example: if you need exactly once processing and cna;t find any way to do idempotent processing, then you "process
+  data" + "commit offsets" as part of a single transaction.

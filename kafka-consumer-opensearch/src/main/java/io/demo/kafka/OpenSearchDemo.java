@@ -1,6 +1,7 @@
 package io.demo.kafka;
 
 import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -74,10 +75,13 @@ public class OpenSearchDemo {
                                 .id(id);
                         IndexResponse response = openSearchClient.index(indexRequest, DEFAULT);
                         logger.info(response.getId());
-                    } catch (IOException e) {
+                    } catch (Exception e) {
 
                     }
                 }
+                // commit offsets after batch is consumed
+                consumer.commitSync();
+                logger.info("Offsets have been committed");
             }
         }
     }
@@ -112,11 +116,16 @@ public class OpenSearchDemo {
     }
 
     private static String extractedId(String json) {
-        return JsonParser.parseString(json)
-                .getAsJsonObject()
-                .get("id")
-                .getAsJsonObject()
-                .get("id")
-                .getAsString();
+        try {
+            return JsonParser.parseString(json)
+                    .getAsJsonObject()
+                    .get("id")
+                    .getAsJsonObject()
+                    .get("id")
+                    .getAsString();
+        } catch (Exception e) {
+            logger.warn("Skipping bad data: " + json);
+            throw new RuntimeException("Skipping bad data: " + json);
+        }
     }
 }

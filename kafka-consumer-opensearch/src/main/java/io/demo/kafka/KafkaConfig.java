@@ -30,6 +30,7 @@ public class KafkaConfig {
         props.setProperty(GROUP_ID_CONFIG, GROUP_ID);
         // earliest, latest, none
         props.setProperty(AUTO_OFFSET_RESET_CONFIG, "latest");
+        props.setProperty(ENABLE_AUTO_COMMIT_CONFIG, "false");
         return props;
     }
 
