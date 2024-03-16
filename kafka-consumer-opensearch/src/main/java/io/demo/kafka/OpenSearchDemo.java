@@ -11,6 +11,7 @@ import org.apache.http.impl.client.DefaultConnectionKeepAliveStrategy;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.errors.WakeupException;
 import org.opensearch.action.bulk.BulkRequest;
 import org.opensearch.action.bulk.BulkResponse;
 import org.opensearch.action.index.IndexRequest;
@@ -53,45 +54,56 @@ public class OpenSearchDemo {
                 logger.info("Index already exists");
             }
             consumer.subscribe(singleton(TOPIC));
+            addShutdownHook(consumer);
+            try {
+                while (true) {
+                    // poll for new messages
+                    ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(1000));
+                    int recordCount = records.count();
+                    logger.info("Received " + recordCount + " records");
 
-            while (true) {
-                // poll for new messages
-                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(1000));
-                int recordCount = records.count();
-                logger.info("Received " + recordCount + " records");
+                    BulkRequest bulkRequest = new BulkRequest();
+                    // send the records to OpenSearch
+                    for (ConsumerRecord<String, String> record : records) {
 
-                BulkRequest bulkRequest = new BulkRequest();
-                // send the records to OpenSearch
-                for (ConsumerRecord<String, String> record : records) {
+                        // send the record into Opensearch
 
-                    // send the record into Opensearch
+                        // strategy 1
+                        // define on ID using Kafka Record coordinates
+                        // id = record.topic() + "_" + record.partition() + "_" + record.offset();
+                        try {
+                            // strategy 2
+                            // define on ID using the record value
+                            String id = extractedId(record.value());
 
-                    // strategy 1
-                    // define on ID using Kafka Record coordinates
-                    // id = record.topic() + "_" + record.partition() + "_" + record.offset();
-                    try {
-                        // strategy 2
-                        // define on ID using the record value
-                        String id = extractedId(record.value());
-
-                        IndexRequest indexRequest = new IndexRequest(INDEX_NAME)
-                                .source(record.value(), JSON)
-                                .id(id);
+                            IndexRequest indexRequest = new IndexRequest(INDEX_NAME)
+                                    .source(record.value(), JSON)
+                                    .id(id);
 //                        IndexResponse response = openSearchClient.index(indexRequest, DEFAULT);
-                        bulkRequest.add(indexRequest);
+                            bulkRequest.add(indexRequest);
 //                        logger.info(response.getId());
-                    } catch (Exception e) {
+                        } catch (Exception e) {
 
+                        }
+                    }
+                    if (bulkRequest.numberOfActions() > 0) {
+                        BulkResponse response = openSearchClient.bulk(bulkRequest, DEFAULT);
+                        logger.info("bulk request sent with " + response.getItems().length + " requests");
+                        Thread.sleep(1000);
+                        // commit offsets after batch is consumed
+                        consumer.commitSync();
+                        logger.info("Offsets have been committed");
                     }
                 }
-                if (bulkRequest.numberOfActions() > 0) {
-                    BulkResponse response = openSearchClient.bulk(bulkRequest, DEFAULT);
-                    logger.info("bulk request sent with " + response.getItems().length + " requests");
-                    Thread.sleep(1000);
-                    // commit offsets after batch is consumed
-                    consumer.commitSync();
-                    logger.info("Offsets have been committed");
-                }
+
+            } catch (WakeupException e) {
+                logger.info("Consumer is starting to shutdown...");
+            } catch (Exception e) {
+                logger.error("Error while consuming", e);
+            } finally {
+                consumer.close();
+                openSearchClient.close();
+                logger.info("Consumer is gracefully closed");
             }
         }
     }
@@ -137,5 +149,23 @@ public class OpenSearchDemo {
             logger.warn("Skipping bad data: " + json);
             throw new RuntimeException("Skipping bad data: " + json);
         }
+    }
+
+    private static void addShutdownHook(KafkaConsumer<String, String> consumer) {
+        // get the reference to the main thread
+        Thread mainThread = Thread.currentThread();
+
+        // add a shutdown hook
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            logger.info("Detected a shutdown let's exit by calling consumer.wakeup()...");
+            consumer.wakeup();
+
+            // join the main thread to allow the execution of the code in main thread
+            try {
+                mainThread.join();
+            } catch (InterruptedException e) {
+                logger.error("Error while joining the main thread, {}", e.getMessage());
+            }
+        }));
     }
 }

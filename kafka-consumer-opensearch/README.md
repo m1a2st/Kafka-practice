@@ -77,3 +77,29 @@ while (true) {
   - You need to handle the cases where rebalances happen (`ConsumerRebalanceListener` interface)
 - Example: if you need exactly once processing and cna;t find any way to do idempotent processing, then you "process
   data" + "commit offsets" as part of a single transaction.
+
+# Consumer Offset Reset Behavior
+
+- A consumer is expected to read from a log continuously.
+![Consumer_Offset_Reset.png](..%2Fimg%2FConsumer_Offset_Reset.png)
+- But if your application ahs a bug, your consumer can be down
+- If Kafka has a retention of 7 days, and your consumer is down for more than 7 days, the offsets are "invalid"
+- The behavior for the consumer is to then use:
+  - `auto.offset-reset=lastest`: will read from the end of the log
+  - `auto.offset-reset=earliest`: will read from the start of the log
+  - `auto.offset-reset=none`: will throw exception if no offset is found
+- Additionally, consumer offsets be lost:
+  - If a consumer hasn't read new data in 1 day (Kafka < 2.0)
+  - If a consumer hasn't read new data in 7 day (Kafka >= 2.0)
+- This can be controlled by the broker setting `offset.retention.minutes`
+
+## Replaying data for Consumer
+
+- To replay data for a consumer group:
+  - Take all the consumers from a specific group down
+  - Use  Kafka-consumer-groups command to set to what you want
+  - Restart consumers
+- **Bottom line:**
+- Set proper data retention period & offset retention period
+- Ensure the auto reset behavior is the one you expect /want
+- Use replay capability in case of unexpected behavior
