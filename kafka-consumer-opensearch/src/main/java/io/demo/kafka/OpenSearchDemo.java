@@ -1,5 +1,6 @@
 package io.demo.kafka;
 
+import com.google.gson.JsonParser;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -57,9 +58,20 @@ public class OpenSearchDemo {
                 logger.info("Received " + recordCount + " records");
                 // send the records to OpenSearch
                 for (ConsumerRecord<String, String> record : records) {
+
+                    // send the record into Opensearch
+
+                    // strategy 1
+                    // define on ID using Kafka Record coordinates
+                    // id = record.topic() + "_" + record.partition() + "_" + record.offset();
                     try {
+                        // strategy 2
+                        // define on ID using the record value
+                        String id = extractedId(record.value());
+
                         IndexRequest indexRequest = new IndexRequest(INDEX_NAME)
-                                .source(record.value(), JSON);
+                                .source(record.value(), JSON)
+                                .id(id);
                         IndexResponse response = openSearchClient.index(indexRequest, DEFAULT);
                         logger.info(response.getId());
                     } catch (IOException e) {
@@ -95,10 +107,16 @@ public class OpenSearchDemo {
                             .setHttpClientConfigCallback(
                                     httpAsyncClientBuilder -> httpAsyncClientBuilder.setDefaultCredentialsProvider(cp)
                                             .setKeepAliveStrategy(new DefaultConnectionKeepAliveStrategy())));
-
-
         }
-
         return restHighLevelClient;
+    }
+
+    private static String extractedId(String json) {
+        return JsonParser.parseString(json)
+                .getAsJsonObject()
+                .get("id")
+                .getAsJsonObject()
+                .get("id")
+                .getAsString();
     }
 }
