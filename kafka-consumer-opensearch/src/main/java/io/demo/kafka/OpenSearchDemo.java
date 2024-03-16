@@ -11,6 +11,8 @@ import org.apache.http.impl.client.DefaultConnectionKeepAliveStrategy;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.opensearch.action.bulk.BulkRequest;
+import org.opensearch.action.bulk.BulkResponse;
 import org.opensearch.action.index.IndexRequest;
 import org.opensearch.action.index.IndexResponse;
 import org.opensearch.client.RestClient;
@@ -35,7 +37,7 @@ public class OpenSearchDemo {
     private static final Logger logger = LoggerFactory.getLogger(OpenSearchDemo.class.getSimpleName());
     private static final String INDEX_NAME = "wikimedia";
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         // first create on OpenSearch Client
         RestHighLevelClient openSearchClient = createOpenSearchClient();
         // create our Kafka Client
@@ -57,6 +59,8 @@ public class OpenSearchDemo {
                 ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(1000));
                 int recordCount = records.count();
                 logger.info("Received " + recordCount + " records");
+
+                BulkRequest bulkRequest = new BulkRequest();
                 // send the records to OpenSearch
                 for (ConsumerRecord<String, String> record : records) {
 
@@ -73,15 +77,21 @@ public class OpenSearchDemo {
                         IndexRequest indexRequest = new IndexRequest(INDEX_NAME)
                                 .source(record.value(), JSON)
                                 .id(id);
-                        IndexResponse response = openSearchClient.index(indexRequest, DEFAULT);
-                        logger.info(response.getId());
+//                        IndexResponse response = openSearchClient.index(indexRequest, DEFAULT);
+                        bulkRequest.add(indexRequest);
+//                        logger.info(response.getId());
                     } catch (Exception e) {
 
                     }
                 }
-                // commit offsets after batch is consumed
-                consumer.commitSync();
-                logger.info("Offsets have been committed");
+                if (bulkRequest.numberOfActions() > 0) {
+                    BulkResponse response = openSearchClient.bulk(bulkRequest, DEFAULT);
+                    logger.info("bulk request sent with " + response.getItems().length + " requests");
+                    Thread.sleep(1000);
+                    // commit offsets after batch is consumed
+                    consumer.commitSync();
+                    logger.info("Offsets have been committed");
+                }
             }
         }
     }
