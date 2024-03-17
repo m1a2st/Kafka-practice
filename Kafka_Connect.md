@@ -9,7 +9,7 @@
 ![Connect_Pipeline.png](img%2FConnect_Pipeline.png)
 
 ## Kafka Connect - Architecture Design
-![Connect_Architecture.png](img%2FConnect_Architechture.png)
+![Connect_Architecture.png](img%2FConnect_Architecture.png)
 
 ## Kafka Connect - High level
 - **Source Connectors** to get data from Common Data Source
