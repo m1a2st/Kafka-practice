@@ -36,7 +36,7 @@ import static org.opensearch.common.xcontent.XContentType.JSON;
 public class OpenSearchDemo {
 
     private static final Logger logger = LoggerFactory.getLogger(OpenSearchDemo.class.getSimpleName());
-    private static final String INDEX_NAME = "wikimedia";
+    private static final String INDEX_NAME = "wikimedia.recentchange";
 
     public static void main(String[] args) throws IOException, InterruptedException {
         // first create on OpenSearch Client
