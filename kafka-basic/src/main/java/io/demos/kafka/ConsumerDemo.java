@@ -2,12 +2,11 @@ package io.demos.kafka;
 
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 
 import static io.demos.kafka.KafkaConfig.TOPIC;
@@ -24,7 +23,7 @@ public class ConsumerDemo {
         KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
 
         // subscribe consumer to our topic(s)
-        consumer.subscribe(Arrays.asList(TOPIC));
+        consumer.subscribe(List.of(TOPIC));
 
         // poll for new data
         while (true) {
@@ -34,8 +33,8 @@ public class ConsumerDemo {
             ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(1000));
 
             records.forEach(record -> {
-                logger.info("Key: " + record.key() + ", Value: " + record.value());
-                logger.info("Partition: " + record.partition() + ", Offset: " + record.offset());
+                logger.info("Key: {}, Value: {}", record.key(), record.value());
+                logger.info("Partition: {}, Offset: {}", record.partition(), record.offset());
             });
         }
     }
