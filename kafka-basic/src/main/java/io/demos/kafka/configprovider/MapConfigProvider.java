@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Set;
 
 public class MapConfigProvider implements ConfigProvider {
+
+    // from outside like s3, file, external system
     @Override
     public ConfigData get(String s) {
         Map<String, String> data = new HashMap<>();
